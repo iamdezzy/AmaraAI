@@ -1,22 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Debug environment variables
+console.log('Environment check:')
+console.log('VITE_SUPABASE_URL from env:', import.meta.env.VITE_SUPABASE_URL)
+console.log('VITE_SUPABASE_ANON_KEY from env:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing')
+
 // Retrieve keys from environment variables with fallback for development
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hwdmxfbkswNzptqniilb.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZG14ZmJrc3duenB0cW5paWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NDEyMjksImV4cCI6MjA2NTMxNzIyOX0.ELRI4hTbsvhYKfbgXNSQ5Te8XZRYIiBNQagKPc3HZtM'
 
+console.log('Final configuration:')
+console.log('Supabase URL:', supabaseUrl)
+console.log('Supabase Key:', supabaseAnonKey ? 'Present' : 'Missing')
+
 // Runtime check to alert developers if keys are missing
-if (!supabaseUrl || supabaseUrl === 'https://hwdmxfbkswNzptqniilb.supabase.co') {
-  console.error('Supabase client failed to initialize: VITE_SUPABASE_URL is missing. Please check your environment variables or direct assignments.')
+if (!supabaseUrl) {
+  console.error('❌ Supabase URL is missing!')
 }
 
-if (!supabaseAnonKey || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
-  console.error('Supabase client failed to initialize: VITE_SUPABASE_ANON_KEY is missing. Please check your environment variables or direct assignments.')
-}
-
-// Only log in development mode and only non-sensitive info
-if (import.meta.env.DEV) {
-  console.log('Supabase client initializing...')
-  console.log('Supabase URL:', supabaseUrl)
+if (!supabaseAnonKey) {
+  console.error('❌ Supabase anon key is missing!')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
