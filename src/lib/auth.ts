@@ -5,6 +5,8 @@ export class AuthService {
   // Email/Password Sign Up
   static async signUpWithEmail(data: SignUpData) {
     try {
+      console.log('🔄 Starting signup process...')
+      
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -13,11 +15,29 @@ export class AuthService {
         }
       })
 
-      if (error) throw error
+      console.log('📊 Supabase auth response:', {
+        user: authData.user ? 'User created' : 'No user',
+        session: authData.session ? 'Session created' : 'No session',
+        error: error ? error.message : 'No error'
+      })
+
+      if (error) {
+        console.error('❌ Auth signup error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        })
+        throw error
+      }
+
+      // Check if user was created but needs email confirmation
+      if (authData.user && !authData.session) {
+        console.log('📧 User created but needs email confirmation')
+      }
 
       // Only log success in development mode - NO sensitive data
       if (import.meta.env.DEV) {
-        console.log('Sign up successful')
+        console.log('✅ Sign up successful')
       }
 
       return {
@@ -26,10 +46,12 @@ export class AuthService {
         session: authData.session
       }
     } catch (error) {
-      // Only log error type, not sensitive details
-      if (import.meta.env.DEV) {
-        console.error('Sign up error type:', error instanceof Error ? error.name : 'Unknown error')
-      }
+      console.error('🚨 Full signup error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error
+      })
       
       return {
         success: false,
