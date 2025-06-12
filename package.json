@@ -8,11 +8,13 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop",
-    "supabase:reset": "supabase db reset",
-    "supabase:deploy": "supabase functions deploy",
-    "deploy:functions": "supabase functions deploy trial-status && supabase functions deploy update-trial-usage && supabase functions deploy initialize-trial-plan"
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset",
+    "supabase:login": "npx supabase login",
+    "supabase:link": "npx supabase link",
+    "supabase:deploy": "npx supabase functions deploy",
+    "deploy:functions": "npx supabase functions deploy trial-status && npx supabase functions deploy update-trial-usage && npx supabase functions deploy initialize-trial-plan"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
