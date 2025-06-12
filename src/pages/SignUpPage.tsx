@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Check, X, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthService } from '../lib/auth';
+import { supabase } from '../lib/supabase'; // or wherever your supabase client is
 
 export function SignUpPage() {
   const navigate = useNavigate();
@@ -90,7 +91,6 @@ export function SignUpPage() {
     e.preventDefault();
     
     if (!validateForm()) return;
-
     setIsLoading(true);
     
     try {
@@ -99,28 +99,37 @@ export function SignUpPage() {
         email: formData.email,
         password: formData.password
       });
-
       if (!result.success) {
         setErrors({ general: result.error || 'Sign up failed' });
         return;
       }
-
+      // ADD THIS: Create user profile after successful signup
+      if (result.user && result.user.id) {
+        try {
+          const { data, error } = await supabase.rpc('create_user_profile', {
+            user_id: result.user.id
+          });
+          
+          if (error) {
+            console.error('Profile creation error:', error);
+            // Don't fail the whole signup for profile creation - user can retry later
+          }
+        } catch (profileError) {
+          console.error('Profile creation failed:', profileError);
+        }
+      }
       // Get the stored signup path or use URL param
       const signupPath = sessionStorage.getItem('amara-signup-path') || planFromUrl;
       
       // Route based on the user's initial choice
       if (signupPath === 'trial') {
-        // Redirect to comparison/pricing page for trial users
         navigate('/comparison-pricing');
       } else if (signupPath === 'freemium') {
-        // Redirect directly to dashboard for freemium users
-        navigate('/dashboard'); // This would be the main app dashboard
+        navigate('/dashboard');
       } else {
-        // Default fallback - go to onboarding
         navigate('/onboarding');
       }
       
-      // Clean up session storage
       sessionStorage.removeItem('amara-signup-path');
       
     } catch (error) {
