@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Check, X, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AuthService } from '../lib/auth';
 
 export function SignUpPage() {
   const navigate = useNavigate();
@@ -92,11 +93,18 @@ export function SignUpPage() {
 
     setIsLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Sign up successful:', formData);
-      
+      // Use AuthService for secure sign up
+      const result = await AuthService.signUpWithEmail({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (!result.success) {
+        setErrors({ general: result.error || 'Sign up failed' });
+        return;
+      }
+
       // Get the stored signup path or use URL param
       const signupPath = sessionStorage.getItem('amara-signup-path') || planFromUrl;
       
@@ -116,17 +124,28 @@ export function SignUpPage() {
       sessionStorage.removeItem('amara-signup-path');
       
     } catch (error) {
-      console.error('Sign up error:', error);
       setErrors({ general: 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialSignUp = (provider: 'google' | 'apple') => {
-    console.log(`Sign up with ${provider}`);
-    // In a real app, this would initiate OAuth flow
-    alert(`${provider} sign up would start here!`);
+  const handleSocialSignUp = async (provider: 'google' | 'apple') => {
+    try {
+      if (provider === 'google') {
+        const result = await AuthService.signInWithGoogle();
+        if (!result.success) {
+          setErrors({ general: result.error || 'Google sign up failed' });
+        }
+      } else if (provider === 'apple') {
+        const result = await AuthService.signInWithApple();
+        if (!result.success) {
+          setErrors({ general: result.error || 'Apple sign up failed' });
+        }
+      }
+    } catch (error) {
+      setErrors({ general: 'Social sign up failed. Please try again.' });
+    }
   };
 
   const handleSignInRedirect = () => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AuthService } from '../lib/auth';
 
 export function SignInPage() {
   const navigate = useNavigate();
@@ -55,34 +56,65 @@ export function SignInPage() {
 
     setIsLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Sign in successful:', formData);
-      // In a real app, this would authenticate and redirect
-      alert('Sign in successful! Welcome back to Amara.');
+      // Use AuthService for secure sign in
+      const result = await AuthService.signInWithEmail({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (!result.success) {
+        setErrors({ general: result.error || 'Sign in failed' });
+        return;
+      }
+
+      // Redirect to main app after successful sign in
       navigate('/chat'); // or wherever authenticated users should go
     } catch (error) {
-      console.error('Sign in error:', error);
-      setErrors({ general: 'Invalid email or password. Please try again.' });
+      setErrors({ general: 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialSignIn = (provider: 'google' | 'apple') => {
-    console.log(`Sign in with ${provider}`);
-    // In a real app, this would initiate OAuth flow
-    alert(`${provider} sign in would start here!`);
+  const handleSocialSignIn = async (provider: 'google' | 'apple') => {
+    try {
+      if (provider === 'google') {
+        const result = await AuthService.signInWithGoogle();
+        if (!result.success) {
+          setErrors({ general: result.error || 'Google sign in failed' });
+        }
+      } else if (provider === 'apple') {
+        const result = await AuthService.signInWithApple();
+        if (!result.success) {
+          setErrors({ general: result.error || 'Apple sign in failed' });
+        }
+      }
+    } catch (error) {
+      setErrors({ general: 'Social sign in failed. Please try again.' });
+    }
   };
 
   const handleSignUpRedirect = () => {
     navigate('/signup');
   };
 
-  const handleForgotPassword = () => {
-    console.log('Forgot password');
-    alert('Password reset would start here!');
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setErrors({ email: 'Please enter your email address first' });
+      return;
+    }
+
+    try {
+      const result = await AuthService.resetPassword(formData.email);
+      if (result.success) {
+        alert('Password reset email sent! Check your inbox.');
+      } else {
+        setErrors({ general: result.error || 'Failed to send reset email' });
+      }
+    } catch (error) {
+      setErrors({ general: 'Failed to send reset email. Please try again.' });
+    }
   };
 
   return (

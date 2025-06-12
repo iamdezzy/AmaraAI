@@ -15,13 +15,22 @@ export class AuthService {
 
       if (error) throw error
 
+      // Only log success in development mode - NO sensitive data
+      if (import.meta.env.DEV) {
+        console.log('Sign up successful')
+      }
+
       return {
         success: true,
         user: authData.user,
         session: authData.session
       }
     } catch (error) {
-      console.error('Sign up error:', error)
+      // Only log error type, not sensitive details
+      if (import.meta.env.DEV) {
+        console.error('Sign up error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Sign up failed'
@@ -39,13 +48,22 @@ export class AuthService {
 
       if (error) throw error
 
+      // Only log success in development mode - NO sensitive data
+      if (import.meta.env.DEV) {
+        console.log('Sign in successful')
+      }
+
       return {
         success: true,
         user: authData.user,
         session: authData.session
       }
     } catch (error) {
-      console.error('Sign in error:', error)
+      // Only log error type, not sensitive details
+      if (import.meta.env.DEV) {
+        console.error('Sign in error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Sign in failed'
@@ -65,12 +83,19 @@ export class AuthService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Google OAuth initiated')
+      }
+
       return {
         success: true,
         data
       }
     } catch (error) {
-      console.error('Google sign in error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Google sign in error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Google sign in failed'
@@ -90,12 +115,19 @@ export class AuthService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Apple OAuth initiated')
+      }
+
       return {
         success: true,
         data
       }
     } catch (error) {
-      console.error('Apple sign in error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Apple sign in error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Apple sign in failed'
@@ -109,9 +141,16 @@ export class AuthService {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Sign out successful')
+      }
+
       return { success: true }
     } catch (error) {
-      console.error('Sign out error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Sign out error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Sign out failed'
@@ -128,9 +167,16 @@ export class AuthService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Password reset email sent')
+      }
+
       return { success: true }
     } catch (error) {
-      console.error('Reset password error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Reset password error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Reset password failed'
@@ -146,7 +192,10 @@ export class AuthService {
 
       return { success: true, user }
     } catch (error) {
-      console.error('Get current user error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Get current user error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get current user'
@@ -162,7 +211,10 @@ export class AuthService {
 
       return { success: true, session }
     } catch (error) {
-      console.error('Get current session error:', error)
+      if (import.meta.env.DEV) {
+        console.error('Get current session error type:', error instanceof Error ? error.name : 'Unknown error')
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get current session'

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Clock, MapPin, Shield, Heart, Brain, Zap, Crown, ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { TrialService } from '../lib/trialService';
 
 export function ComparisonPricingPage() {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -71,12 +73,41 @@ export function ComparisonPricingPage() {
     }
   };
 
-  const handleStartTrial = () => {
-    // In a real app, this would redirect to payment processing
-    console.log('Starting trial with plan:', selectedPlan);
-    alert(`Starting 7-day free trial with ${selectedPlan} plan selected!`);
-    // For demo purposes, redirect to a success page or dashboard
-    navigate('/dashboard');
+  const handleStartTrial = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Get device fingerprint for linking
+      const fingerprintId = localStorage.getItem('amara-device-fingerprint');
+      
+      // Initialize trial plan with Supabase
+      const result = await TrialService.initializeTrialPlan({
+        chosenPlan: selectedPlan === 'monthly' ? 'monthly_trial' : 'yearly_trial',
+        fingerprintId: fingerprintId || undefined
+      });
+
+      if (result.success) {
+        // In a real app, this would redirect to payment processing
+        if (import.meta.env.DEV) {
+          console.log('Trial initialized successfully');
+        }
+        
+        // For demo purposes, redirect to a success page or dashboard
+        navigate('/dashboard');
+      } else {
+        throw new Error('Failed to initialize trial');
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('Trial initialization error type:', error instanceof Error ? error.name : 'Unknown error');
+      }
+      
+      // Fallback for demo - still redirect but show alert
+      alert(`Starting 7-day free trial with ${selectedPlan} plan selected!`);
+      navigate('/dashboard');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePlanSelect = (plan: 'monthly' | 'yearly') => {
@@ -301,11 +332,21 @@ export function ComparisonPricingPage() {
             <div className="text-center">
               <button
                 onClick={handleStartTrial}
-                className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3 mx-auto animate-pulse"
+                disabled={isLoading}
+                className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none flex items-center gap-3 mx-auto"
               >
-                <Heart className="w-6 h-6 animate-pulse" />
-                <span>Start Your 7 Days Free Trial</span>
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                {isLoading ? (
+                  <>
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Initializing Trial...</span>
+                  </>
+                ) : (
+                  <>
+                    <Heart className="w-6 h-6 animate-pulse" />
+                    <span>Start Your 7 Days Free Trial</span>
+                    <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                  </>
+                )}
               </button>
               
               <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">

@@ -56,9 +56,15 @@ export class TrialService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Trial status retrieved successfully')
+      }
+
       return data as TrialStatus
     } catch (error) {
-      console.error('Error getting trial status:', error)
+      if (import.meta.env.DEV) {
+        console.error('Error getting trial status type:', error instanceof Error ? error.name : 'Unknown error')
+      }
       return null
     }
   }
@@ -76,9 +82,15 @@ export class TrialService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Trial usage updated successfully')
+      }
+
       return data as { isTrialExceeded: boolean }
     } catch (error) {
-      console.error('Error updating trial usage:', error)
+      if (import.meta.env.DEV) {
+        console.error('Error updating trial usage type:', error instanceof Error ? error.name : 'Unknown error')
+      }
       return null
     }
   }
@@ -103,9 +115,15 @@ export class TrialService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('Trial plan initialized successfully')
+      }
+
       return data
     } catch (error) {
-      console.error('Error initializing trial plan:', error)
+      if (import.meta.env.DEV) {
+        console.error('Error initializing trial plan type:', error instanceof Error ? error.name : 'Unknown error')
+      }
       throw error
     }
   }
@@ -127,9 +145,15 @@ export class TrialService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('User profile retrieved successfully')
+      }
+
       return { success: true, profile: data }
     } catch (error) {
-      console.error('Error getting user profile:', error)
+      if (import.meta.env.DEV) {
+        console.error('Error getting user profile type:', error instanceof Error ? error.name : 'Unknown error')
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get user profile'
@@ -163,9 +187,15 @@ export class TrialService {
 
       if (error) throw error
 
+      if (import.meta.env.DEV) {
+        console.log('User profile updated successfully')
+      }
+
       return { success: true, profile: data }
     } catch (error) {
-      console.error('Error updating user profile:', error)
+      if (import.meta.env.DEV) {
+        console.error('Error updating user profile type:', error instanceof Error ? error.name : 'Unknown error')
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update user profile'
