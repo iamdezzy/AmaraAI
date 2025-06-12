@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Check, X, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function SignUpPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,7 +16,11 @@ export function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  React.useEffect(() => {
+  // Get the plan from URL params
+  const planFromUrl = searchParams.get('plan');
+  const isTrialPath = planFromUrl === 'trial';
+
+  useEffect(() => {
     setIsVisible(true);
   }, []);
 
@@ -91,9 +96,25 @@ export function SignUpPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       console.log('Sign up successful:', formData);
-      // In a real app, this would create the account and redirect
-      alert('Account created successfully! Welcome to Amara.');
-      navigate('/onboarding');
+      
+      // Get the stored signup path or use URL param
+      const signupPath = sessionStorage.getItem('amara-signup-path') || planFromUrl;
+      
+      // Route based on the user's initial choice
+      if (signupPath === 'trial') {
+        // Redirect to comparison/pricing page for trial users
+        navigate('/comparison-pricing');
+      } else if (signupPath === 'freemium') {
+        // Redirect directly to dashboard for freemium users
+        navigate('/dashboard'); // This would be the main app dashboard
+      } else {
+        // Default fallback - go to onboarding
+        navigate('/onboarding');
+      }
+      
+      // Clean up session storage
+      sessionStorage.removeItem('amara-signup-path');
+      
     } catch (error) {
       console.error('Sign up error:', error);
       setErrors({ general: 'Something went wrong. Please try again.' });
@@ -123,7 +144,7 @@ export function SignUpPage() {
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-700/50 px-4 py-2 rounded-full mb-6">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-              🎉 Start Your 7 Days Free Trial!
+              {isTrialPath ? '🎉 Start Your 7 Days Free Trial!' : '✨ Join Amara for Free!'}
             </span>
           </div>
         </div>
@@ -146,7 +167,7 @@ export function SignUpPage() {
             Create Your Account
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Your safe space for healing awaits
+            {isTrialPath ? 'Start your premium healing journey' : 'Your safe space for healing awaits'}
           </p>
         </div>
 

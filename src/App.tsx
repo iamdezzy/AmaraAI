@@ -4,6 +4,7 @@ import { LandingPage } from './pages/LandingPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { SignInPage } from './pages/SignInPage';
+import { ComparisonPricingPage } from './pages/ComparisonPricingPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/signin" element={<SignInPage />} />
+          <Route path="/comparison-pricing" element={<ComparisonPricingPage />} />
         </Routes>
       </div>
     </Router>
