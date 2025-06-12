@@ -24,6 +24,18 @@ if (!supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Test function to check auth connection
+export const testAuth = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    console.log('Auth test result:', { data, error })
+    return { data, error }
+  } catch (err) {
+    console.error('Auth test failed:', err)
+    return { data: null, error: err }
+  }
+}
+
 // Database types
 export interface UserProfile {
   user_id: string
