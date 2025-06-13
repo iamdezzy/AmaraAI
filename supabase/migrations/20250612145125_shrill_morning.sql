@@ -26,6 +26,28 @@
     - Add policies for anonymous users to access device trial data
 */
 
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create function to automatically create user profile on signup
+CREATE OR REPLACE FUNCTION create_user_profile()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO user_profiles (user_id, current_plan)
+  VALUES (NEW.id, 'freemium');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Create user_profiles table
 CREATE TABLE IF NOT EXISTS user_profiles (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -90,16 +112,6 @@ CREATE POLICY "Anyone can update device trials by fingerprint"
   TO anon, authenticated
   USING (true);
 
--- Create function to automatically create user profile on signup
-CREATE OR REPLACE FUNCTION create_user_profile()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO user_profiles (user_id, current_plan)
-  VALUES (NEW.id, 'freemium');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Create trigger to automatically create user profile
 DROP TRIGGER IF EXISTS create_user_profile_trigger ON auth.users;
 CREATE TRIGGER create_user_profile_trigger
@@ -107,18 +119,13 @@ CREATE TRIGGER create_user_profile_trigger
   FOR EACH ROW
   EXECUTE FUNCTION create_user_profile();
 
--- Create function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS trigger AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Create trigger for updated_at on user_profiles
 DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
 CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON user_profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_device_trials_fingerprint ON device_trials(fingerprint_id);
