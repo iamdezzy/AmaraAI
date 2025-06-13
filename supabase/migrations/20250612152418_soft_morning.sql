@@ -1,25 +1,7 @@
 /*
-  # Initial Amara Database Schema
+  # Extended Amara Database Schema - Chat Sessions and Messages
 
-  1. New Tables
-    - `user_profiles`
-      - `user_id` (uuid, primary key, foreign key to auth.users)
-      - `current_plan` (text, enum: freemium, monthly_trial, yearly_trial, monthly_paid, yearly_paid)
-      - `trial_start_date` (timestamp)
-      - `trial_end_date` (timestamp)
-      - `is_active` (boolean, default true)
-      - `created_at` (timestamp)
-      - `updated_at` (timestamp)
-    
-    - `device_trials`
-      - `fingerprint_id` (text, primary key)
-      - `chat_messages_used` (integer, default 0)
-      - `voice_notes_used` (integer, default 0)
-      - `is_trial_exceeded` (boolean, default false)
-      - `last_accessed_at` (timestamp)
-      - `converted_to_user_id` (uuid, nullable, foreign key to auth.users)
-      - `created_at` (timestamp)
-    
+  1. New Tables (extending existing schema)
     - `chat_sessions`
       - `id` (uuid, primary key)
       - `user_id` (uuid, nullable, foreign key to auth.users)
@@ -38,58 +20,11 @@
       - `created_at` (timestamp)
 
   2. Security
-    - Enable RLS on all tables
-    - Add policies for authenticated users to access their own data
-    - Add policies for anonymous users to access device trials
+    - Enable RLS on new tables
+    - Add policies for authenticated and anonymous users
 
-  3. Functions
-    - Create trigger function for updating updated_at timestamps
-    - Create trigger function for creating user profiles on signup
+  Note: This migration assumes user_profiles and device_trials tables already exist
 */
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Create updated_at trigger function
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create user profile creation trigger function
-CREATE OR REPLACE FUNCTION create_user_profile()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.user_profiles (user_id, current_plan)
-  VALUES (NEW.id, 'freemium');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create user_profiles table
-CREATE TABLE IF NOT EXISTS user_profiles (
-  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  current_plan text NOT NULL DEFAULT 'freemium' CHECK (current_plan IN ('freemium', 'monthly_trial', 'yearly_trial', 'monthly_paid', 'yearly_paid')),
-  trial_start_date timestamptz,
-  trial_end_date timestamptz,
-  is_active boolean DEFAULT true,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-
--- Create device_trials table
-CREATE TABLE IF NOT EXISTS device_trials (
-  fingerprint_id text PRIMARY KEY,
-  chat_messages_used integer DEFAULT 0 CHECK (chat_messages_used >= 0),
-  voice_notes_used integer DEFAULT 0 CHECK (voice_notes_used >= 0),
-  is_trial_exceeded boolean DEFAULT false,
-  last_accessed_at timestamptz DEFAULT now(),
-  converted_to_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  created_at timestamptz DEFAULT now()
-);
 
 -- Create chat_sessions table
 CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -112,49 +47,9 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at timestamptz DEFAULT now()
 );
 
--- Enable Row Level Security
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE device_trials ENABLE ROW LEVEL SECURITY;
+-- Enable Row Level Security on new tables
 ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policies for user_profiles
-CREATE POLICY "Users can read own profile"
-  ON user_profiles
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own profile"
-  ON user_profiles
-  FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own profile"
-  ON user_profiles
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
-
--- Create RLS policies for device_trials
-CREATE POLICY "Anyone can read device trials by fingerprint"
-  ON device_trials
-  FOR SELECT
-  TO anon, authenticated
-  USING (true);
-
-CREATE POLICY "Anyone can insert device trials"
-  ON device_trials
-  FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (true);
-
-CREATE POLICY "Anyone can update device trials by fingerprint"
-  ON device_trials
-  FOR UPDATE
-  TO anon, authenticated
-  USING (true);
 
 -- Create RLS policies for chat_sessions
 CREATE POLICY "Users can read own sessions"
@@ -222,20 +117,7 @@ CREATE POLICY "Anonymous users can insert messages to anonymous sessions"
     )
   );
 
--- Create triggers
-CREATE TRIGGER update_user_profiles_updated_at
-  BEFORE UPDATE ON user_profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER create_user_profile_on_signup
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION create_user_profile();
-
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_device_trials_fingerprint ON device_trials(fingerprint_id);
+-- Create indexes for performance on new tables
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON chat_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
